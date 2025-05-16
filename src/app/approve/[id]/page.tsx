@@ -1,10 +1,8 @@
-'use client'
-
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { redirect } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ApproveButtons } from './approve-buttons'
 
 interface Content {
   id: number
@@ -13,80 +11,38 @@ interface Content {
   createdon: string
 }
 
+async function getContent(id: string): Promise<Content> {
+  const { data, error } = await supabase
+    .from('content')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  if (error) {
+    throw new Error('Failed to fetch content')
+  }
+
+  return data
+}
+
 export default async function ApproveContent({
-    params,
-  }: {
-    params: Promise<{ id: string }>
-  }) {
-  const { id } = await params
-
-  const router = useRouter()
-  const [content, setContent] = useState<Content | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    fetchContent()
-  }, [id])
-
-  const fetchContent = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('content')
-        .select('*')
-        .eq('id', id)
-        .single()
-
-      if (error) throw error
-      setContent(data)
-    } catch (error) {
-      setError('Failed to fetch content')
-      console.error('Error:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleAction = async (action: 'approve' | 'deny') => {
-    try {
-      setLoading(true)
-      if (action === 'approve') {
-        const { error } = await supabase
-          .from('content')
-          .update({ approved: true })
-          .eq('id', id)
-        if (error) throw error
-      } else {
-        const { error } = await supabase
-          .from('content')
-          .delete()
-          .eq('id', id)
-        if (error) throw error
-      }
-      router.push('/database')
-    } catch (error) {
-      setError('Failed to process action')
-      console.error('Error:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (loading) {
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  let content: Content
+  try {
+    const { id } = await params
+    content = await getContent(id)
+  } catch (error) {
     return (
       <div className="container mx-auto p-4 max-w-2xl">
-        <p>Loading...</p>
-      </div>
-    )
-  }
-
-  if (error || !content) {
-    return (
-      <div className="container mx-auto p-4 max-w-2xl">
-        <p className="text-red-500">{error || 'Content not found'}</p>
-        <Button onClick={() => router.push('/database')} className="mt-4">
-          Return to Database
-        </Button>
+        <p className="text-red-500">Content not found</p>
+        <form action={async () => redirect('/database')}>
+          <Button type="submit" className="mt-4">
+            Return to Database
+          </Button>
+        </form>
       </div>
     )
   }
@@ -106,23 +62,7 @@ export default async function ApproveContent({
               </p>
             </div>
             
-            <div className="flex gap-4">
-              <Button
-                onClick={() => handleAction('approve')}
-                disabled={loading}
-                className="flex-1 bg-green-600 hover:bg-green-700"
-              >
-                Approve
-              </Button>
-              <Button
-                onClick={() => handleAction('deny')}
-                disabled={loading}
-                variant="destructive"
-                className="flex-1"
-              >
-                Deny
-              </Button>
-            </div>
+            <ApproveButtons contentId={content.id} />
           </div>
         </CardContent>
       </Card>
