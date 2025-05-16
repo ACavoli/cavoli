@@ -75,14 +75,6 @@ export function ApproveMenu() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="container mx-auto p-4 max-w-2xl">
-        <p>Loading...</p>
-      </div>
-    )
-  }
-
   if (error) {
     return (
       <div className="container mx-auto p-4 max-w-2xl">
