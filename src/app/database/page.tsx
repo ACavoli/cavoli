@@ -43,9 +43,11 @@ export default function Database() {
       await subscribeToPushNotifications()
       setIsSubscribed(true)
       toast.success('Successfully subscribed to push notifications!')
+      toast('Successfully subscribed to push notifications!')
     } catch (error) {
       console.error('Failed to subscribe:', error)
       toast.error('Failed to subscribe to push notifications')
+      toast('Failed to subscribe to push notifications')
     }
   }
 
@@ -97,9 +99,11 @@ export default function Database() {
 
       setContent('')
       toast.success('Content submitted for approval')
+      toast('Content submitted for approval')
     } catch (error) {
       console.error('Error submitting content:', error)
       toast.error('Error submitting content')
+      toast('Error submitting content')
     } finally {
       setLoading(false)
     }
