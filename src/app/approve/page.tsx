@@ -1,5 +1,10 @@
 import { ApproveMenu } from './approve-menu'
+import { Suspense } from 'react'
 
 export default function ApproveContent() {
-  return <ApproveMenu />
+  return (
+    <Suspense>
+      <ApproveMenu />
+    </Suspense>
+  )
 } 
