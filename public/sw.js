@@ -49,17 +49,10 @@ self.addEventListener('push', function(event) {
     icon: '/icon-192x192.png',
     badge: '/icon-192x192.png',
     vibrate: [100, 50, 100],
-    data: data.data,
-    actions: [
-      {
-        action: 'approve',
-        title: 'Approve'
-      },
-      {
-        action: 'deny',
-        title: 'Deny'
-      }
-    ]
+    data: {
+      ...data.data,
+      url: `/approve/${data.data.contentId}`
+    }
   };
 
   event.waitUntil(
@@ -70,25 +63,20 @@ self.addEventListener('push', function(event) {
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
 
-  if (event.action === 'approve' || event.action === 'deny') {
-    const contentId = event.notification.data.contentId;
-    
-    event.waitUntil(
-      fetch('/api/content', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contentId,
-          action: event.action
-        })
-      })
-    );
-  } else {
-    // If no action was taken, open the app
-    event.waitUntil(
-      clients.openWindow('/')
-    );
-  }
+  const url = event.notification.data.url;
+  
+  event.waitUntil(
+    clients.matchAll({ type: 'window' }).then((clientList) => {
+      // Check if there is already a window/tab open with the target URL
+      for (const client of clientList) {
+        if (client.url === url && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // If no window/tab is already open, open a new one
+      if (clients.openWindow) {
+        return clients.openWindow(url);
+      }
+    })
+  );
 }); 
