@@ -13,7 +13,13 @@ interface Content {
   createdon: string
 }
 
-export default function ApproveContent({ params }: { params: { id: string } }) {
+export default async function ApproveContent({
+    params,
+  }: {
+    params: Promise<{ id: string }>
+  }) {
+  const { id } = await params
+
   const router = useRouter()
   const [content, setContent] = useState<Content | null>(null)
   const [loading, setLoading] = useState(true)
@@ -21,14 +27,14 @@ export default function ApproveContent({ params }: { params: { id: string } }) {
 
   useEffect(() => {
     fetchContent()
-  }, [params.id])
+  }, [id])
 
   const fetchContent = async () => {
     try {
       const { data, error } = await supabase
         .from('content')
         .select('*')
-        .eq('id', params.id)
+        .eq('id', id)
         .single()
 
       if (error) throw error
@@ -48,13 +54,13 @@ export default function ApproveContent({ params }: { params: { id: string } }) {
         const { error } = await supabase
           .from('content')
           .update({ approved: true })
-          .eq('id', params.id)
+          .eq('id', id)
         if (error) throw error
       } else {
         const { error } = await supabase
           .from('content')
           .delete()
-          .eq('id', params.id)
+          .eq('id', id)
         if (error) throw error
       }
       router.push('/database')

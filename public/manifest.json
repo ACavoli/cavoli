@@ -1,7 +1,7 @@
 {
-  "name": "Content Approval App",
-  "short_name": "ContentApp",
-  "description": "A content approval system with push notifications",
+  "name": "Cavoli",
+  "short_name": "Cavoli",
+  "description": "Alessandro Cavoli Portfolio",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
