@@ -49,10 +49,7 @@ self.addEventListener('push', function(event) {
     icon: '/icon-192x192.png',
     badge: '/icon-192x192.png',
     vibrate: [100, 50, 100],
-    data: {
-      ...data.data,
-      url: `/approve/${data.data.contentId}`
-    }
+    data: data.data
   };
 
   event.waitUntil(

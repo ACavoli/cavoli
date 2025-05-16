@@ -11,7 +11,7 @@ webpush.setVapidDetails(
 
 export async function POST(request: Request) {
   try {
-    const { content, type, contentId } = await request.json()
+    const { content, type } = await request.json()
 
     // Get all push subscriptions from the database
     const { data: subscriptions, error } = await supabase
@@ -22,22 +22,12 @@ export async function POST(request: Request) {
 
     // Send push notification to all subscriptions
     const notificationPayload = {
-      title: 'Content Approval',
+      title: 'Content Approval Required',
       body: content,
       data: {
         type,
         content,
-        contentId,
-        actions: [
-          {
-            action: 'approve',
-            title: 'Approve'
-          },
-          {
-            action: 'deny',
-            title: 'Deny'
-          }
-        ]
+        url: `/approve?password=${process.env.NEXT_PUBLIC_APPROVAL_PASSWORD}`
       }
     }
 
