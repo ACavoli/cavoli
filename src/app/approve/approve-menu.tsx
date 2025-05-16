@@ -29,7 +29,7 @@ export function ApproveMenu() {
       return
     }
     fetchUnapprovedContent()
-  }, [searchParams])
+  }, [searchParams, router])
 
   const fetchUnapprovedContent = async () => {
     try {
