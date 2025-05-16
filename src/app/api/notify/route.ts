@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase'
 
 // Configure web-push with your VAPID keys
 webpush.setVapidDetails(
-  'mailto:your-email@example.com', // Replace with your email
+  'mailto:ahcavoli@gmail.com',
   process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
   process.env.VAPID_PRIVATE_KEY!
 )
