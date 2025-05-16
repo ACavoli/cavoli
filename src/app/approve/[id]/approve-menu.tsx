@@ -65,14 +65,6 @@ export function ApproveMenu({ id }: {id: string}) {
     }
     }
 
-    if (loading) {
-    return (
-        <div className="container mx-auto p-4 max-w-2xl">
-        <p>Loading...</p>
-        </div>
-    )
-    }
-
     if (error || !content) {
     return (
         <div className="container mx-auto p-4 max-w-2xl">

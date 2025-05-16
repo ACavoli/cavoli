@@ -22,7 +22,7 @@ export async function POST(request: Request) {
 
     // Send push notification to all subscriptions
     const notificationPayload = {
-      title: 'Content Approval Required',
+      title: 'Content Approval',
       body: content,
       data: {
         type,
