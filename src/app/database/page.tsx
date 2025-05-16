@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { subscribeToPushNotifications } from '@/lib/push'
+import { toast } from 'sonner'
 
 interface Content {
   id: number
@@ -41,10 +42,10 @@ export default function Database() {
     try {
       await subscribeToPushNotifications()
       setIsSubscribed(true)
-      alert('Successfully subscribed to push notifications!')
+      toast.success('Successfully subscribed to push notifications!')
     } catch (error) {
       console.error('Failed to subscribe:', error)
-      alert('Failed to subscribe to push notifications')
+      toast.error('Failed to subscribe to push notifications')
     }
   }
 
@@ -95,10 +96,10 @@ export default function Database() {
       })
 
       setContent('')
-      alert('Content submitted for approval')
+      toast.success('Content submitted for approval')
     } catch (error) {
       console.error('Error submitting content:', error)
-      alert('Error submitting content')
+      toast.error('Error submitting content')
     } finally {
       setLoading(false)
     }
