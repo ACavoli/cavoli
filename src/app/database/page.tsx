@@ -14,6 +14,8 @@ interface Content {
   createdon: string
 }
 
+const subscribable = false
+
 export default function Database() {
   const [content, setContent] = useState('')
   const [approvedContent, setApprovedContent] = useState<Content[]>([])
@@ -22,7 +24,9 @@ export default function Database() {
 
   useEffect(() => {
     fetchApprovedContent()
-    checkSubscription()
+    if (subscribable) {
+      checkSubscription()
+    }
   }, [])
 
   const checkSubscription = async () => {
@@ -104,7 +108,7 @@ export default function Database() {
     <div className="container mx-auto p-4 max-w-2xl">
       <h1 className="text-2xl font-bold mb-6">Content Management</h1>
       
-      {!isSubscribed && (
+      {(!isSubscribed && subscribable) && (
         <div className="mb-6 p-4 bg-yellow-50 rounded-lg">
           <p className="text-yellow-800 mb-2">
             Enable push notifications to receive approval requests
