@@ -11,7 +11,7 @@ interface ApertureEffectProps {
 
 export default function ApertureEffect({
   bladeCount,
-  bladeWidth = 1300,
+  bladeWidth = 1500,
   duration = 1000,
 }: ApertureEffectProps) {
   const [visible, setVisible] = useState(true);
@@ -64,7 +64,7 @@ export default function ApertureEffect({
       duration: duration,
       delay: 500,
       ease: 'linear',
-      playbackEase: 'cubicBezier(.31,.46,.26,-0.63)'
+      playbackEase: 'cubicBezier(.35,.7,.51,-0.78)'
     });
 
     return () => {
@@ -91,8 +91,9 @@ export default function ApertureEffect({
         <path
           d={poly1}
           className="blade"
-          fill="gray"
-          stroke="black"
+          fill="black"
+          stroke="white"
+          strokeWidth="1"
         />
       </g>
     );
@@ -107,6 +108,12 @@ export default function ApertureEffect({
       height="100%"
       xmlns="http://www.w3.org/2000/svg"
     >
+        <defs>
+            {/* <linearGradient id="Gradient2" x1="0" x2="1" y1="0" y2="1">
+                <stop offset="0%" stopColor="gray" />
+                <stop offset="100%" stopColor="black"/>
+            </linearGradient> */}
+        </defs>
       {blades}
     </svg>
   );
