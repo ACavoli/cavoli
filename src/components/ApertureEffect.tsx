@@ -40,7 +40,7 @@ export default function ApertureEffect({
   });
 
   const poly1 = keyframes[0];
-  const poly2 = keyframes[keyframes.length - 1];
+//   const poly2 = keyframes[keyframes.length - 1];
 
   useEffect(() => {
     if (!svgRef.current) return;
