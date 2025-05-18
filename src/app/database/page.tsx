@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { subscribeToPushNotifications } from '@/lib/push'
+import { unstable_ViewTransition as ViewTransition } from 'react'
 import { toast } from 'sonner'
 
 interface Content {
@@ -107,7 +108,9 @@ export default function Database() {
 
   return (
     <div className="container mx-auto p-4 max-w-2xl">
-      <h1 className="text-2xl font-bold mb-6">Content Management</h1>
+      <ViewTransition name="database">
+        <h1 className="text-2xl font-bold mb-6">Content Management</h1>
+      </ViewTransition>
       
       {(!isSubscribed && subscribable) && (
         <div className="mb-6 p-4 bg-yellow-50 rounded-lg">
