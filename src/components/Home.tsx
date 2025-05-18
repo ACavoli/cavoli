@@ -146,7 +146,8 @@ export default function Home() {
           ALESSANDRO CAVOLI
         </h1>
       </div>
-      <div className="absolute bottom-0 w-full h-1/2 mask-to-t backdrop-blur-md"></div>
+      <div className="absolute top-0 w-full h-1/6 mask-to-t backdrop-blur-md"></div>
+      <div className="absolute bottom-0 w-full h-1/6 mask-to-b backdrop-blur-md"></div>
     </div>
   )
 }
