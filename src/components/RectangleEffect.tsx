@@ -1,8 +1,6 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { unstable_ViewTransition as ViewTransition } from "react"
-import Link from "next/link"
 
 interface RectangleEffectProps {
   disabled?: boolean;
@@ -30,7 +28,7 @@ export default function RectangleEffect({
     const handleMouseMove = (e: MouseEvent) => {
       targetX.current = (e.clientX) / window.innerWidth
       if (e.clientY + window.scrollY > window.innerHeight) {
-        targetY.current = (e.clientY) / window.innerHeight
+        targetY.current = (e.clientY - (window.innerHeight - window.scrollY)) / window.innerHeight
       }
     }
 
@@ -56,25 +54,30 @@ export default function RectangleEffect({
 
   return (
     <div className="flex flex-wrap w-screen h-screen" ref={boxRef}>
-      {/* <div className="r top-0 w-full h-1/6 mask-to-t backdrop-blur-md z-10"></div> */}
       <div
-        className={classes + "border-white border-r border-b transition-colors"}
+        className={classes + "border-white border-t border-r border-b transition-colors"}
         style={{ top: 0, left: 0, width: `${leftWidth * 100}%`, height: `${topHeight * 100}%` }}
       >
-      {box1}
+        {box1}
       </div>
       <div
-        className={classes + "border-white border-l border-b transition-colors"}
+        className={classes + "border-white border-t border-l border-b transition-colors"}
         style={{ top: 0, right: 0, width: `${rightWidth * 100}%`, height: `${topHeight * 100}%` }}
-      />
+      >
+        {box2}
+      </div>
       <div
         className={classes + "border-white border-r border-t transition-colors"}
         style={{ bottom: 0, left: 0, width: `${leftWidth * 100}%`, height: `${bottomHeight * 100}%` }}
-      />
+      >
+        {box3}
+      </div>
       <div
         className={classes + "border-white border-l border-t transition-colors"}
         style={{ bottom: 0, right: 0, width: `${rightWidth * 100}%`, height: `${bottomHeight * 100}%` }}
-      />
+      >
+        {box4}
+      </div>
     </div>
   )
 }
