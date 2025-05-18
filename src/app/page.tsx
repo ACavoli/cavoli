@@ -8,7 +8,7 @@ import Globe from "@/components/Globe";
 export default function Home() {
   return (
     <div>
-      <ApertureEffect bladeCount={9} duration={2500} /> 
+      {/* <ApertureEffect bladeCount={9} duration={2500} />  */}
       <HomeComponent/>
       <RectangleEffect
       box1={

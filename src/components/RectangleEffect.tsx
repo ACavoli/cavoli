@@ -26,9 +26,11 @@ export default function RectangleEffect({
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      targetX.current = (e.clientX) / window.innerWidth
-      if (e.clientY + window.scrollY > window.innerHeight) {
-        targetY.current = (e.clientY - (window.innerHeight - window.scrollY)) / window.innerHeight
+      if (!disabled) {
+        targetX.current = (e.clientX) / window.innerWidth
+        if (e.clientY + window.scrollY > window.innerHeight) {
+          targetY.current = (e.clientY - (window.innerHeight - window.scrollY)) / window.innerHeight
+        }
       }
     }
 

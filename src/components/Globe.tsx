@@ -12,12 +12,14 @@ const WorldMap = () => {
   const requestRef = useRef<number>(0);
   const containerRef = useRef<SVGSVGElement | null>(null);
   const [viewBox, setViewBox] = useState("0 0 800 600");
+  const [hovering, setHovering] = useState(false);
+  const targetRotationRef = useRef<[number, number]>(rotation);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
     const observer = new ResizeObserver((entries) => {
-      for (let entry of entries) {
+      for (const entry of entries) {
         const { width, height } = entry.contentRect;
         setViewBox(`0 0 ${width} ${height}`);
         projection
@@ -30,19 +32,47 @@ const WorldMap = () => {
     return () => observer.disconnect();
   }, []);
 
+  /*
   useEffect(() => {
     const animate = () => {
-      setRotation(([lambda, phi]) => [lambda + 0.1, phi]);
+      setRotation(([lambda, phi]) => [lambda + (hovering ? 0.3 : 0.6), phi]);
       requestRef.current = requestAnimationFrame(animate);
     };
     requestRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(requestRef.current!);
-  }, []);
+  }, [hovering]);
+  */
+
+  useEffect(() => {
+    if (hovering) {
+      targetRotationRef.current = [-135, 25];
+    }
+
+    const animate = () => {
+      setRotation(([lambda, phi]) => {
+        const [targetLambda, targetPhi] = hovering ? targetRotationRef.current : [lambda + 0.6, phi - (30 + phi)/50];
+        const newLambda = lambda + (targetLambda - lambda) * 0.1;
+        const newPhi = phi + (targetPhi - phi) * 0.1;
+        return [newLambda, newPhi];
+      });
+      requestRef.current = requestAnimationFrame(animate);
+    };
+
+    requestRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(requestRef.current!);
+  }, [hovering]);
 
   projection.rotate(rotation);
 
   return (
-    <svg className="group-hover:invert-100 transition-all duration-300" ref={containerRef} viewBox={viewBox} style={{ width: "100%", height: "100%", backgroundColor: "transparent" }}>
+    <svg
+      className="group-hover:invert-100 transition-all duration-300"
+      ref={containerRef}
+      viewBox={viewBox}
+      style={{ width: "100%", height: "100%", backgroundColor: "transparent" }}
+      onMouseEnter={() => setHovering(true)}
+      onMouseLeave={() => setHovering(false)}
+    >
       {(() => {
         const d = path({ type: 'Sphere' });
         return d ? <path className="sphere" d={d} fill="#000" stroke="#fff" strokeWidth={1} /> : null;

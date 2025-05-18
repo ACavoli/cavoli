@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from 'react'
-import WigglyText from './WigglyText'
+// import WigglyText from './WigglyText'
 
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -164,7 +164,7 @@ export default function Home() {
             willChange: 'transform',
           }}
         >
-            <WigglyText text="SAMPLE TEXT"/>
+            SAMPLE TEXT
         </h1>
       </div>
       <div className="absolute top-0 w-full h-1/6 mask-to-t backdrop-blur-md"></div>
