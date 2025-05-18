@@ -1,4 +1,4 @@
-import ApertureEffect from "@/components/ApertureEffect";
+// import ApertureEffect from "@/components/ApertureEffect";
 import { unstable_ViewTransition as ViewTransition } from 'react';
 import Link from "next/link";
 import HomeComponent from "@/components/Home"
