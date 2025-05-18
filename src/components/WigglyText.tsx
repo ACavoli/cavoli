@@ -40,7 +40,7 @@ export default function WigglyText({ text = "hello" }: WigglyTextProps) {
                     const dy = rect.y + rect.height / 2 - mouseY;
                     const distance = Math.sqrt(dx * dx + dy * dy);
 
-                    const repelRadius = 800;
+                    const repelRadius = 150;
                     const force = distance < repelRadius ? (repelRadius - distance) / repelRadius : 0;
 
                     setOffset({

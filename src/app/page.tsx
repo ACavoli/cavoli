@@ -3,6 +3,7 @@ import { unstable_ViewTransition as ViewTransition } from 'react';
 import Link from "next/link";
 import HomeComponent from "@/components/Home"
 import RectangleEffect from "@/components/RectangleEffect";
+import Globe from "@/components/Globe";
 
 export default function Home() {
   return (
@@ -18,7 +19,7 @@ export default function Home() {
         </Link>
       }
       box2={
-        <div></div>
+        <Globe />
       }
       box3={
         <div></div>

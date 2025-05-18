@@ -55,13 +55,13 @@ export default function RectangleEffect({
   return (
     <div className="flex flex-wrap w-screen h-screen" ref={boxRef}>
       <div
-        className={classes + "border-white border-t border-r border-b transition-colors"}
+        className={classes + "border-white border-t border-r border-b transition-colors group"}
         style={{ top: 0, left: 0, width: `${leftWidth * 100}%`, height: `${topHeight * 100}%` }}
       >
         {box1}
       </div>
       <div
-        className={classes + "border-white border-t border-l border-b transition-colors"}
+        className={classes + "border-white border-t border-l border-b transition-colors group"}
         style={{ top: 0, right: 0, width: `${rightWidth * 100}%`, height: `${topHeight * 100}%` }}
       >
         {box2}

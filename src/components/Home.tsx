@@ -1,11 +1,12 @@
 "use client"
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import WigglyText from './WigglyText'
 
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const mouseRef = useRef({ x: 0, y: 0 })
+  const [scrollY, setScrollY] = useState(0)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -136,6 +137,19 @@ export default function Home() {
     }
   }, [])
 
+  // Scroll listener for parallax effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY)
+    }
+    window.addEventListener('scroll', handleScroll)
+    // Set initial value in case not zero
+    setScrollY(window.scrollY)
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+    }
+  }, [])
+
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-black">
       <canvas
@@ -143,7 +157,13 @@ export default function Home() {
         className="absolute top-0 left-0 w-full h-full"
       />
       <div className="relative z-10 flex items-center justify-center w-full h-full">
-        <h1 className="text-9xl font-bold text-white tracking-wider animate-fade-in">
+        <h1
+          className="text-9xl font-bold text-white tracking-wider animate-fade-in"
+          style={{
+            transform: `translateY(${scrollY * 0.1}px)`,
+            willChange: 'transform',
+          }}
+        >
             <WigglyText text="SAMPLE TEXT"/>
         </h1>
       </div>
