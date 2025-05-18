@@ -11,7 +11,7 @@ interface ApertureEffectProps {
 
 export default function ApertureEffect({
   bladeCount,
-  bladeWidth = 1500,
+  bladeWidth = 1700,
   duration = 1000,
 }: ApertureEffectProps) {
   const [visible, setVisible] = useState(true);
@@ -100,21 +100,21 @@ export default function ApertureEffect({
   });
 
   return (
-    <svg
-      ref={svgRef}
-      className="fixed inset-0 z-50 pointer-events-none overflow-hidden"
-      viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
-      width="100%"
-      height="100%"
-      xmlns="http://www.w3.org/2000/svg"
-    >
+      <svg
+        ref={svgRef}
+        className="fixed inset-0 z-50 pointer-events-none overflow-hidden"
+        viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
+        width="100%"
+        height="100%"
+        xmlns="http://www.w3.org/2000/svg"
+      >
         <defs>
             {/* <linearGradient id="Gradient2" x1="0" x2="1" y1="0" y2="1">
                 <stop offset="0%" stopColor="gray" />
                 <stop offset="100%" stopColor="black"/>
             </linearGradient> */}
         </defs>
-      {blades}
-    </svg>
+        {blades}
+      </svg>
   );
 }
