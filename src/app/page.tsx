@@ -11,7 +11,7 @@ export default function Home() {
       <HomeComponent/>
       <RectangleEffect
       box1={
-        <Link className="w-full h-`full flex items-center justify-center" href="/database">
+        <Link className="w-full h-full flex items-center justify-center" href="/database">
           <ViewTransition name="database">
           <span>Content Management</span>
           </ViewTransition>

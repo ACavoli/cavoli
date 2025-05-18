@@ -28,8 +28,8 @@ export default function RectangleEffect({
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
+      targetX.current = (e.clientX) / window.innerWidth
       if (e.clientY + window.scrollY > window.innerHeight) {
-        targetX.current = (e.clientX) / window.innerWidth
         targetY.current = (e.clientY) / window.innerHeight
       }
     }
@@ -56,6 +56,7 @@ export default function RectangleEffect({
 
   return (
     <div className="flex flex-wrap w-screen h-screen" ref={boxRef}>
+      {/* <div className="r top-0 w-full h-1/6 mask-to-t backdrop-blur-md z-10"></div> */}
       <div
         className={classes + "border-white border-r border-b transition-colors"}
         style={{ top: 0, left: 0, width: `${leftWidth * 100}%`, height: `${topHeight * 100}%` }}
