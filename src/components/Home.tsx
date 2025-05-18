@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef } from 'react'
+import WigglyText from './WigglyText'
 
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -142,8 +143,8 @@ export default function Home() {
         className="absolute top-0 left-0 w-full h-full"
       />
       <div className="relative z-10 flex items-center justify-center w-full h-full">
-        <h1 className="text-6xl font-bold text-white tracking-wider animate-fade-in">
-          ALESSANDRO CAVOLI
+        <h1 className="text-9xl font-bold text-white tracking-wider animate-fade-in">
+            <WigglyText text="SAMPLE TEXT"/>
         </h1>
       </div>
       <div className="absolute top-0 w-full h-1/6 mask-to-t backdrop-blur-md"></div>
