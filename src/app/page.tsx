@@ -1,28 +1,21 @@
 "use client"
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import SlimeSimulation from '@/components/SlimeSimulation'
-import Globe from "@/components/Globe"
 
 export default function Home() {
-  const [numSlimes, setNumSlimes] = useState(100000)
-  const [decayRate, setDecayRate] = useState(0.985)
-  const [diffusionRate, setDiffusionRate] = useState(0.2)
-  const [moveSpeed, setMoveSpeed] = useState(0.003)
-  const [turnSpeed, setTurnSpeed] = useState(0.2)
-  const [sensorDistance, setSensorDistance] = useState(0.005)
-  const [sensorSize, setSensorSize] = useState(1)
-  const [sensorAngle, setSensorAngle] = useState(0.3)
-  const [attractionStrength, setAttractionStrength] = useState(1)
+  const numSlimes = 100000
+  const decayRate = 0.985
+  const diffusionRate = 0.2
+  const moveSpeed = 0.003
+  const turnSpeed = 0.2
+  const sensorDistance = 0.005
+  const sensorSize = 1
+  const sensorAngle = 0.3
+  const attractionStrength = 1
   const [attractorData, setAttractorData] = useState<Float32Array | null>(null);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
-  const [isDebugMode, setIsDebugMode] = useState(false);
   const [webGPUAvailable, setWebGPUAvailable] = useState(true);
-
-  // Effect to check for debug mode
-  useEffect(() => {
-    setIsDebugMode(window.location.search.includes('debug=true'));
-  }, []);
 
   // Effect to check WebGPU availability
   useEffect(() => {
@@ -156,7 +149,7 @@ export default function Home() {
       window.removeEventListener('resize', onResize);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [viewportSize, isDebugMode]);
+  }, [viewportSize]);
 
   return (
     <>

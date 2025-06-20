@@ -34,7 +34,11 @@ export default function SlimeSimulation({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [error, setError] = useState<string | null>(null)
   const frameCountRef = useRef(0)
-  const simulationStateRef = useRef<any>(null)
+  const simulationStateRef = useRef<{
+    device: GPUDevice
+    uniformBuffer: GPUBuffer
+    attractorBuffer: GPUBuffer
+  } | null>(null)
 
   useEffect(() => {
     if (simulationStateRef.current) {

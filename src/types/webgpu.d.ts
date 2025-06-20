@@ -100,7 +100,7 @@ interface GPUQueue {
   ): void;
 }
 
-interface GPUCommandBuffer {}
+// interface GPUCommandBuffer {}
 
 interface GPUTexture {
   createView(descriptor?: GPUTextureViewDescriptor): GPUTextureView;
@@ -220,15 +220,15 @@ interface GPUBindGroupEntry {
   };
 }
 
-interface GPUCommandEncoderDescriptor {}
+// interface GPUCommandEncoderDescriptor {}
 
-interface GPUComputePassDescriptor {}
+// interface GPUComputePassDescriptor {}
 
-interface GPUTextureViewDescriptor {}
+// interface GPUTextureViewDescriptor {}
 
-interface GPURequestAdapterOptions {}
+// interface GPURequestAdapterOptions {}
 
-interface GPUDeviceDescriptor {}
+// interface GPUDeviceDescriptor {}
 
 // WebGPU constants
 declare const GPUBufferUsage: {
@@ -277,7 +277,7 @@ interface HTMLCanvasElement {
   getContext(contextId: 'webgpu'): GPUCanvasContext | null;
 }
 
-interface GPUSampler {}
+// interface GPUSampler {}
 
 interface GPUSamplerDescriptor {
     addressModeU?: GPUAddressMode;
