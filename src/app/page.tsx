@@ -26,6 +26,7 @@ export default function Home() {
         setWebGPUAvailable(!!device);
       } catch (error) {
         setWebGPUAvailable(false);
+        console.error(error);
       }
     };
     checkWebGPU();
