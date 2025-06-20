@@ -106,7 +106,7 @@ interface GPUTexture {
   createView(descriptor?: GPUTextureViewDescriptor): GPUTextureView;
 }
 
-interface GPUTextureView {}
+// interface GPUTextureView {}
 
 interface GPUCanvasContext {
   configure(descriptor: GPUCanvasConfiguration): void;
