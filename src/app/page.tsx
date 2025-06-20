@@ -249,7 +249,7 @@ export default function Home() {
             <div className="text-center">
               <h2 className="attractive-text text-6xl font-bold mb-8">Get In Touch</h2>
               <p className="attractive-text text-2xl mb-8">
-                Let's create something amazing together.
+                Let&apos;s create something amazing together.
               </p>
               <div className="space-x-8">
                 <a href="mailto:hello@alessandrocavoli.com" className="attractive-text text-xl hover:text-blue-400 transition-colors">
