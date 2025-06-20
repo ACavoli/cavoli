@@ -7,11 +7,16 @@ const projection = geoOrthographic();
 const path = geoPath(projection);
 const graticule = geoGraticule();
 
-const WorldMap = () => {
-  const [rotation, setRotation] = useState<[number, number]>([0, -30]);
+interface WorldMapProps {
+    rotates?: boolean
+}
+
+export default function WorldMap({rotates=true}: WorldMapProps) {
+  const initialRotation: [number, number] = rotates ? [0, -30] : [-135, 25]
+  const [rotation, setRotation] = useState<[number, number]>(initialRotation);
   const requestRef = useRef<number>(0);
   const containerRef = useRef<SVGSVGElement | null>(null);
-  const [viewBox, setViewBox] = useState("0 0 800 600");
+  const [viewBox, setViewBox] = useState("0 0 0 0");
   const [hovering, setHovering] = useState(false);
   const targetRotationRef = useRef<[number, number]>(rotation);
 
@@ -47,6 +52,9 @@ const WorldMap = () => {
     if (hovering) {
       targetRotationRef.current = [-135, 25];
     }
+    if (!rotates) {
+        return
+    }
 
     const animate = () => {
       setRotation(([lambda, phi]) => {
@@ -66,27 +74,25 @@ const WorldMap = () => {
 
   return (
     <svg
-      className="group-hover:invert-100 transition-all duration-300"
-      ref={containerRef}
-      viewBox={viewBox}
-      style={{ width: "100%", height: "100%", backgroundColor: "transparent" }}
-      onMouseEnter={() => setHovering(true)}
-      onMouseLeave={() => setHovering(false)}
+    className="group-hover:invert-100 active:invert-0 transition-all duration-300"
+    ref={containerRef}
+    viewBox={viewBox}
+    style={{ width: "100%", height: "100%", backgroundColor: "transparent" }}
+    onMouseEnter={() => setHovering(true)}
+    onMouseLeave={() => setHovering(false)}
     >
-      {(() => {
+    {(() => {
         const d = path({ type: 'Sphere' });
         return d ? <path className="sphere" d={d} fill="#000" stroke="#fff" strokeWidth={1} /> : null;
-      })()}
-      {(() => {
+    })()}
+    {(() => {
         const d = path(graticule());
         return d ? <path className="graticule" d={d} stroke="none" fill="none" /> : null;
-      })()}
-      {geojson.features.map((feature, idx) => {
+    })()}
+    {geojson.features.map((feature, idx) => {
         const d = path(feature as GeoJSON.Feature);
         return d ? <path key={idx} className="feature" d={d} fill="#000" stroke="#fff" strokeWidth={0.8} /> : null;
-      })}
+    })}
     </svg>
   );
 };
-
-export default WorldMap;
