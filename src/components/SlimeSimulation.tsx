@@ -706,17 +706,17 @@ export default function SlimeSimulation({
         })
 
         // Create bind group layout
-        const bindGroupLayout = device.createBindGroupLayout({
-          entries: [
-            { binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
-            { binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
-            { binding: 2, visibility: GPUShaderStage.COMPUTE, texture: { sampleType: 'unfilterable-float' } },
-            { binding: 3, visibility: GPUShaderStage.COMPUTE, storageTexture: { access: 'write-only', format: 'rgba8unorm' } },
-            { binding: 4, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'uniform' } },
-            { binding: 5, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'read-only-storage' } },
-            { binding: 6, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'read-only-storage' } },
-          ],
-        })
+        // const bindGroupLayout = device.createBindGroupLayout({
+        //   entries: [
+        //     { binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
+        //     { binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
+        //     { binding: 2, visibility: GPUShaderStage.COMPUTE, texture: { sampleType: 'unfilterable-float' } },
+        //     { binding: 3, visibility: GPUShaderStage.COMPUTE, storageTexture: { access: 'write-only', format: 'rgba8unorm' } },
+        //     { binding: 4, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'uniform' } },
+        //     { binding: 5, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'read-only-storage' } },
+        //     { binding: 6, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'read-only-storage' } },
+        //   ],
+        // })
 
         // Create slime bind groups
         const slimeBindGroups = [
