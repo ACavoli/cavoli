@@ -15,6 +15,7 @@ interface SlimeSimulationProps {
   sensorAngle?: number
   attractionStrength?: number
   attractorData?: Float32Array | null
+  textCenters?: Float32Array | null
 }
 
 export default function SlimeSimulation({
@@ -30,6 +31,7 @@ export default function SlimeSimulation({
   sensorAngle = 0.2,
   attractionStrength = 0.01,
   attractorData = null,
+  textCenters = null,
 }: SlimeSimulationProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [error, setError] = useState<string | null>(null)
@@ -38,23 +40,65 @@ export default function SlimeSimulation({
     device: GPUDevice
     uniformBuffer: GPUBuffer
     attractorBuffer: GPUBuffer
+    textBoxesBuffer: GPUBuffer
   } | null>(null)
 
   useEffect(() => {
     if (simulationStateRef.current) {
-      const { device, uniformBuffer, attractorBuffer } = simulationStateRef.current
+      const { device, uniformBuffer, attractorBuffer, textBoxesBuffer } = simulationStateRef.current
       const uniforms = new Float32Array([decayRate, diffusionRate, moveSpeed, turnSpeed, sensorDistance, sensorSize, sensorAngle, attractionStrength])
       device.queue.writeBuffer(uniformBuffer, 0, uniforms)
 
       if (attractorData && attractorBuffer) {
         device.queue.writeBuffer(attractorBuffer, 0, attractorData)
+        console.log(`[SlimeSimulation] Updated attractor buffer:`, {
+          size: attractorData.length,
+          sampleValues: attractorData.slice(0, 10),
+          maxValue: Math.max(...Array.from(attractorData.slice(0, 1000))), // Sample first 1000 values to avoid stack overflow
+          nonZeroCount: attractorData.filter(v => v > 0).length,
+          nonZeroSample: attractorData.filter(v => v > 0).slice(0, 5),
+          timestamp: Date.now()
+        })
+      }
+
+      if (textCenters && textBoxesBuffer) {
+        device.queue.writeBuffer(textBoxesBuffer, 0, textCenters)
+        console.log(`[SlimeSimulation] Updated text boxes buffer:`, {
+          size: textCenters.length,
+          numBoxes: textCenters.length / 4,
+          boxes: Array.from({ length: Math.min(textCenters.length / 4, 10) }, (_, i) => ({
+            x1: textCenters[i * 4],
+            y1: textCenters[i * 4 + 1],
+            x2: textCenters[i * 4 + 2],
+            y2: textCenters[i * 4 + 3],
+            isDummy: textCenters[i * 4] === -999.0
+          })),
+          timestamp: Date.now()
+        })
+      } else if (textBoxesBuffer) {
+        // Write dummy data when no text centers
+        const dummyData = new Float32Array(40).fill(-999.0);
+        device.queue.writeBuffer(textBoxesBuffer, 0, dummyData)
+        console.log(`[SlimeSimulation] No text boxes - wrote dummy data to buffer`, {
+          textCentersType: textCenters ? 'array' : 'null',
+          textCentersLength: textCenters?.length || 0,
+          timestamp: Date.now()
+        });
       }
     }
-  }, [decayRate, diffusionRate, moveSpeed, turnSpeed, sensorDistance, sensorSize, sensorAngle, attractionStrength, attractorData])
+  }, [decayRate, diffusionRate, moveSpeed, turnSpeed, sensorDistance, sensorSize, sensorAngle, attractionStrength, attractorData, textCenters])
 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
+
+    console.log('[SlimeSimulation] Initializing WebGPU with data:', {
+      width,
+      height,
+      numSlimes,
+      attractorDataSize: attractorData?.length || 0,
+      textCentersSize: textCenters?.length || 0
+    })
 
     let animationFrameId: number;
 
@@ -71,7 +115,7 @@ export default function SlimeSimulation({
         }
 
         const device = await adapter.requestDevice()
-
+        
         const context = canvas.getContext('webgpu') as GPUCanvasContext
         if (!context) {
           throw new Error('Could not get WebGPU context')
@@ -81,7 +125,7 @@ export default function SlimeSimulation({
         canvas.width = width
         canvas.height = height
         const format = navigator.gpu.getPreferredCanvasFormat()
-
+        
         context.configure({
           device,
           format,
@@ -91,23 +135,12 @@ export default function SlimeSimulation({
         // Create a buffer for slime positions and directions
         const slimeData = new Float32Array(numSlimes * 3) // x, y, angle for each slime
         for (let i = 0; i < numSlimes; i++) {
-          // Use a spiral pattern to spread slimes out naturally
-          const angle = (i / numSlimes) * Math.PI * 20 // Multiple rotations
-          const radius = (i / numSlimes) * 0.6 // Reduced radius to keep away from walls
-          const baseX = Math.cos(angle) * radius
-          const baseY = Math.sin(angle) * radius
+          // Generate random positions within safe bounds
+          let x = (Math.random() * 1.8) - 0.9 // Random x between -0.9 and 0.9
+          let y = (Math.random() * 1.8) - 0.9 // Random y between -0.9 and 0.9
           
-          // Add small random offsets to break synchronization
-          const randomOffset = 0.01
-          let finalX = baseX + (Math.random() - 0.5) * randomOffset
-          let finalY = baseY + (Math.random() - 0.5) * randomOffset
-          
-          // Ensure no slimes are initialized near walls
-          finalX = Math.max(-0.9, Math.min(0.9, finalX))
-          finalY = Math.max(-0.9, Math.min(0.9, finalY))
-          
-          slimeData[i * 3] = finalX // x position
-          slimeData[i * 3 + 1] = finalY // y position
+          slimeData[i * 3] = x // x position
+          slimeData[i * 3 + 1] = y // y position
           slimeData[i * 3 + 2] = Math.random() * Math.PI * 2 // Random angle
         }
 
@@ -131,12 +164,33 @@ export default function SlimeSimulation({
 
         // Create attractor buffer
         const attractorBuffer = device.createBuffer({
-            size: width * height * 4, // 4 bytes per float
-            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+          size: attractorData ? attractorData.byteLength : 4,
+          usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+        })
+
+        // Create text boxes buffer - fixed size for 10 boxes (40 floats)
+        const textBoxesBuffer = device.createBuffer({
+          size: 10 * 4 * 4, // 10 boxes * 4 floats per box * 4 bytes per float
+          usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+        })
+
+        console.log('[SlimeSimulation] Buffer creation:', {
+          textCentersExists: !!textCenters,
+          textCentersLength: textCenters?.length || 0,
+          bufferSize: textCenters && textCenters.length > 0 ? textCenters.byteLength : 0,
+          textCentersSample: textCenters ? Array.from(textCenters.slice(0, 8)) : null
         });
 
+        // Initialize buffers with data if available
         if (attractorData) {
-            device.queue.writeBuffer(attractorBuffer, 0, attractorData);
+          device.queue.writeBuffer(attractorBuffer, 0, attractorData)
+        }
+        if (textCenters) {
+          device.queue.writeBuffer(textBoxesBuffer, 0, textCenters)
+        } else {
+          // Write dummy data when no text centers
+          const dummyData = new Float32Array(40).fill(-999.0);
+          device.queue.writeBuffer(textBoxesBuffer, 0, dummyData)
         }
 
         // Create a buffer for counter
@@ -250,19 +304,20 @@ export default function SlimeSimulation({
             @binding(3) @group(0) var writeTrailMap: texture_storage_2d<rgba8unorm, write>;
             @binding(4) @group(0) var<uniform> uniforms: Uniforms;
             @binding(5) @group(0) var<storage, read> attractorData: array<f32>;
+            @binding(6) @group(0) var<storage, read> textBoxes: array<f32>;
 
             fn sampleTrail(pos: vec2<f32>) -> f32 {
               let sensor_size_u = u32(uniforms.sensorSize);
 
               // Fast path for single-pixel sensor
               if (sensor_size_u <= 1u) {
-                let texCoord = vec2<i32>(
-                  i32((pos.x + 1.0) * 0.5 * f32(WIDTH)),
-                  i32((pos.y + 1.0) * 0.5 * f32(HEIGHT))
-                );
-                if (texCoord.x < 0 || texCoord.x >= i32(WIDTH) || texCoord.y < 0 || texCoord.y >= i32(HEIGHT)) {
-                  return 0.0;
-                }
+              let texCoord = vec2<i32>(
+                i32((pos.x + 1.0) * 0.5 * f32(WIDTH)),
+                i32((pos.y + 1.0) * 0.5 * f32(HEIGHT))
+              );
+              if (texCoord.x < 0 || texCoord.x >= i32(WIDTH) || texCoord.y < 0 || texCoord.y >= i32(HEIGHT)) {
+                return 0.0;
+              }
                 return textureLoad(trailMap, texCoord).r;
               }
 
@@ -293,6 +348,14 @@ export default function SlimeSimulation({
               return total_sense / num_pixels;
             }
 
+            fn isPointInBox(point: vec2<f32>, box: vec4<f32>) -> bool {
+              return point.x >= box.x && point.x <= box.z && point.y >= box.y && point.y <= box.w;
+            }
+
+            fn getBoxCenter(box: vec4<f32>) -> vec2<f32> {
+              return vec2<f32>((box.x + box.z) * 0.5, (box.y + box.w) * 0.5);
+            }
+
             @compute @workgroup_size(100)
             fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
               let threadId = global_id.x;
@@ -304,7 +367,7 @@ export default function SlimeSimulation({
 
               let current_pos = vec2<f32>(slimes[threadId].x, slimes[threadId].y);
 
-              // Calculate sensor positions
+                // Calculate sensor positions
               let frontPos = current_pos + vec2<f32>(
                 cos(slimes[threadId].angle) * uniforms.sensorDistance,
                 sin(slimes[threadId].angle) * uniforms.sensorDistance
@@ -318,13 +381,176 @@ export default function SlimeSimulation({
               let rightPos = current_pos + vec2<f32>(
                 cos(slimes[threadId].angle + uniforms.sensorAngle) * uniforms.sensorDistance,
                 sin(slimes[threadId].angle + uniforms.sensorAngle) * uniforms.sensorDistance
-              );
+                );
 
               // Sample trail at sensor positions
               let frontSense = sampleTrail(frontPos);
               let leftSense = sampleTrail(leftPos);
               let rightSense = sampleTrail(rightPos);
+
+
+              // Use the attractor data to steer slimes (only when there are bounding boxes)
+              var attraction: f32 = 0.0; // Default to no attraction
+              let num_boxes = arrayLength(&textBoxes) / 4u;
               
+              // Count real boxes (not dummy data)
+              var real_box_count: u32 = 0u;
+              for (var i: u32 = 0u; i < num_boxes; i = i + 1u) {
+                if (textBoxes[i * 4u] != -999.0) {
+                  real_box_count = real_box_count + 1u;
+                }
+              }
+              
+              // Only read attractor data if there are real bounding boxes
+              if (real_box_count > 0u) {
+                let slime_pos_uv = (current_pos + 1.0) * 0.5;
+                let texCoord_x = i32(slime_pos_uv.x * f32(WIDTH));
+                let texCoord_y = i32(slime_pos_uv.y * f32(HEIGHT));
+                let attractor_index = texCoord_y * i32(WIDTH) + texCoord_x;
+
+                if (attractor_index >= 0 && attractor_index < i32(WIDTH * HEIGHT)) {
+                    attraction = attractorData[attractor_index];
+                }
+              }
+
+              // Check if slime is inside any text bounding box
+              var inside_box = false;
+              var box_center = vec2<f32>(0.0, 0.0);
+              
+              // Only process bounding boxes if there are any
+              if (num_boxes > 0u) {
+                for (var i: u32 = 0u; i < num_boxes; i = i + 1u) {
+                  // Skip dummy data
+                  if (textBoxes[i * 4u] == -999.0) {
+                    continue;
+                  }
+                  
+                  let box = vec4<f32>(
+                    textBoxes[i * 4u],     // x1
+                    textBoxes[i * 4u + 1u], // y1
+                    textBoxes[i * 4u + 2u], // x2
+                    textBoxes[i * 4u + 3u]  // y2
+                  );
+                  
+                  if (isPointInBox(current_pos, box)) {
+                    inside_box = true;
+                    box_center = getBoxCenter(box);
+                    break;
+                  }
+                }
+
+                if (inside_box) {
+                  // Slime is inside a text box - check if text is within radius
+                  var text_within_radius = false;
+                  let check_radius = uniforms.sensorDistance * 3.0; // Check in a larger radius
+                  
+                  // Sample in a circle around the slime to check for text
+                  for (var angle: u32 = 0u; angle < 8u; angle = angle + 1u) {
+                    let test_angle = f32(angle) * 0.785398; // 45 degrees in radians
+                    let test_pos = current_pos + vec2<f32>(
+                      cos(test_angle) * check_radius,
+                      sin(test_angle) * check_radius
+                    );
+                    
+                    let test_uv = (test_pos + 1.0) * 0.5;
+                    let test_x = i32(test_uv.x * f32(WIDTH));
+                    let test_y = i32(test_uv.y * f32(HEIGHT));
+                    let test_index = test_y * i32(WIDTH) + test_x;
+                    
+                    if (test_index >= 0 && test_index < i32(WIDTH * HEIGHT)) {
+                      let test_attraction = attractorData[test_index];
+                      if (test_attraction > 0.1) {
+                        text_within_radius = true;
+                        break;
+                      }
+                    }
+                  }
+                  
+                  if (text_within_radius) {
+                    // Text is within radius - use local attraction to follow text contours
+                    var best_angle = slimes[threadId].angle;
+                    var max_attraction = attraction;
+                    
+                    for (var i: u32 = 0u; i < 8u; i = i + 1u) {
+                      let test_angle = f32(i) * 0.785398; // 45 degrees in radians
+                      let test_pos = current_pos + vec2<f32>(
+                        cos(test_angle) * uniforms.sensorDistance / 1.0,
+                        sin(test_angle) * uniforms.sensorDistance / 1.0
+                      );
+                      
+                      let test_uv = (test_pos + 1.0) * 0.5;
+                      let test_x = i32(test_uv.x * f32(WIDTH));
+                      let test_y = i32(test_uv.y * f32(HEIGHT));
+                      let test_index = test_y * i32(WIDTH) + test_x;
+                      
+                      if (test_index >= 0 && test_index < i32(WIDTH * HEIGHT)) {
+                        let test_attraction = attractorData[test_index];
+                        if (test_attraction > max_attraction) {
+                          max_attraction = test_attraction;
+                          best_angle = test_angle;
+                        }
+                      }
+                    }
+                    
+                    // Turn towards the direction of strongest attraction
+                    var angle_diff = best_angle - slimes[threadId].angle;
+                    if (angle_diff > 3.14159) { angle_diff = angle_diff - 6.28318; }
+                    if (angle_diff < -3.14159) { angle_diff = angle_diff + 6.28318; }
+                    
+                    slimes[threadId].angle = slimes[threadId].angle + angle_diff * uniforms.attractionStrength;
+                  }
+                } else {
+                  // Slime is not inside any text box - find nearest point on any box edge
+                  var nearest_edge_point = vec2<f32>(0.0, 0.0);
+                  var min_distance = 1.5;
+                  var found_box = false;
+                  
+                  for (var i: u32 = 0u; i < num_boxes; i = i + 1u) {
+                    // Skip dummy data
+                    if (textBoxes[i * 4u] == -999.0) {
+                      continue;
+                    }
+                    
+                    let box = vec4<f32>(
+                      textBoxes[i * 4u],     // x1
+                      textBoxes[i * 4u + 1u], // y1
+                      textBoxes[i * 4u + 2u], // x2
+                      textBoxes[i * 4u + 3u]  // y2
+                    );
+                    
+                    // Find nearest point on box edges
+                    let x = clamp(current_pos.x, box.x, box.z);
+                    let y = clamp(current_pos.y, box.y, box.w);
+                    let edge_point = vec2<f32>(x, y);
+                    
+                    // Calculate distance to this edge point
+                    let distance = length(current_pos - edge_point);
+                    if (distance < min_distance) {
+                      min_distance = distance;
+                      nearest_edge_point = edge_point;
+                      found_box = true;
+                    }
+                  }
+                  
+                  // If we found a box, attract towards nearest edge point
+                  if (found_box) {
+                    let angle_to_edge = atan2(nearest_edge_point.y - current_pos.y, nearest_edge_point.x - current_pos.x);
+                    var angle_diff = angle_to_edge - slimes[threadId].angle;
+                    
+                    // Ensure we take the shortest turn
+                    if (angle_diff > 3.14159) { angle_diff = angle_diff - 6.28318; }
+                    if (angle_diff < -3.14159) { angle_diff = angle_diff + 6.28318; }
+
+                    // Add a small random offset to the angle difference
+                    let random_offset = (sin(f32(threadId) * 0.1 + f32(counter.value) * 0.01) - 0.5) * 0.2;
+                    angle_diff = angle_diff + random_offset;
+
+                    slimes[threadId].angle = slimes[threadId].angle + angle_diff * uniforms.attractionStrength * 0.05;
+                  }
+                }
+              }
+              // If num_boxes == 0, skip all bounding box logic and proceed to normal slime behavior
+
               // Turn based on wall sensing
               if (leftPos.x <= -1.0 && leftPos.x < rightPos.x) {
                 slimes[threadId].angle = slimes[threadId].angle + uniforms.turnSpeed;
@@ -345,56 +571,9 @@ export default function SlimeSimulation({
               } else if (frontSense > leftSense && frontSense > rightSense) {
                 // Continue straight - do nothing
               } else if (leftSense > rightSense) {
-                slimes[threadId].angle = slimes[threadId].angle + uniforms.turnSpeed;
-              } else if (rightSense > leftSense) {
                 slimes[threadId].angle = slimes[threadId].angle - uniforms.turnSpeed;
-              }
-
-              // Use the attractor data to steer slimes
-              let slime_pos_uv = (current_pos + 1.0) * 0.5;
-              let texCoord_x = i32(slime_pos_uv.x * f32(WIDTH));
-              let texCoord_y = i32(slime_pos_uv.y * f32(HEIGHT));
-              let attractor_index = texCoord_y * i32(WIDTH) + texCoord_x;
-
-              var attraction: f32 = 0.0; // Default to no attraction
-              if (attractor_index >= 0 && attractor_index < i32(WIDTH * HEIGHT)) {
-                  attraction = attractorData[attractor_index];
-              }
-
-              // If the slime is in an attracting area (white on the map), pull it towards the text.
-              // A value greater than 0.5 means it's on a white part (text).
-              if (attraction < 0.95) {
-                // Find the nearest text edge by sampling in a small radius
-                var best_angle = slimes[threadId].angle;
-                var max_attraction = attraction;
-                
-                for (var i: u32 = 0u; i < 8u; i = i + 1u) {
-                  let test_angle = f32(i) * 0.785398; // 45 degrees in radians
-                  let test_pos = current_pos + vec2<f32>(
-                    cos(test_angle) * uniforms.sensorDistance * 1.0,
-                    sin(test_angle) * uniforms.sensorDistance * 1.0
-                  );
-                  
-                  let test_uv = (test_pos + 1.0) * 0.5;
-                  let test_x = i32(test_uv.x * f32(WIDTH));
-                  let test_y = i32(test_uv.y * f32(HEIGHT));
-                  let test_index = test_y * i32(WIDTH) + test_x;
-                  
-                  if (test_index >= 0 && test_index < i32(WIDTH * HEIGHT)) {
-                    let test_attraction = attractorData[test_index];
-                    if (test_attraction > max_attraction) {
-                      max_attraction = test_attraction;
-                      best_angle = test_angle;
-                    }
-                  }
-                }
-                
-                // Turn towards the direction of strongest attraction
-                var angle_diff = best_angle - slimes[threadId].angle;
-                if (angle_diff > 3.14159) { angle_diff = angle_diff - 6.28318; }
-                if (angle_diff < -3.14159) { angle_diff = angle_diff + 6.28318; }
-                
-                slimes[threadId].angle = slimes[threadId].angle + angle_diff * uniforms.attractionStrength;
+              } else if (rightSense > leftSense) {
+                slimes[threadId].angle = slimes[threadId].angle + uniforms.turnSpeed;
               }
               
               // Move forward
@@ -526,6 +705,19 @@ export default function SlimeSimulation({
           },
         })
 
+        // Create bind group layout
+        const bindGroupLayout = device.createBindGroupLayout({
+          entries: [
+            { binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
+            { binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
+            { binding: 2, visibility: GPUShaderStage.COMPUTE, texture: { sampleType: 'unfilterable-float' } },
+            { binding: 3, visibility: GPUShaderStage.COMPUTE, storageTexture: { access: 'write-only', format: 'rgba8unorm' } },
+            { binding: 4, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'uniform' } },
+            { binding: 5, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'read-only-storage' } },
+            { binding: 6, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'read-only-storage' } },
+          ],
+        })
+
         // Create slime bind groups
         const slimeBindGroups = [
           device.createBindGroup({
@@ -555,6 +747,10 @@ export default function SlimeSimulation({
                 binding: 5,
                 resource: { buffer: attractorBuffer },
               },
+              {
+                binding: 6,
+                resource: { buffer: textBoxesBuffer },
+              },
             ],
           }),
           device.createBindGroup({
@@ -583,6 +779,10 @@ export default function SlimeSimulation({
               {
                 binding: 5,
                 resource: { buffer: attractorBuffer },
+              },
+              {
+                binding: 6,
+                resource: { buffer: textBoxesBuffer },
               },
             ],
           }),
@@ -667,6 +867,7 @@ export default function SlimeSimulation({
             device,
             uniformBuffer,
             attractorBuffer,
+            textBoxesBuffer,
         };
 
         let currentBuffer = 0
