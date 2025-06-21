@@ -136,8 +136,8 @@ export default function SlimeSimulation({
         const slimeData = new Float32Array(numSlimes * 3) // x, y, angle for each slime
         for (let i = 0; i < numSlimes; i++) {
           // Generate random positions within safe bounds
-          let x = (Math.random() * 1.8) - 0.9 // Random x between -0.9 and 0.9
-          let y = (Math.random() * 1.8) - 0.9 // Random y between -0.9 and 0.9
+          const x = (Math.random() * 1.8) - 0.9 // Random x between -0.9 and 0.9
+          const y = (Math.random() * 1.8) - 0.9 // Random y between -0.9 and 0.9
           
           slimeData[i * 3] = x // x position
           slimeData[i * 3 + 1] = y // y position

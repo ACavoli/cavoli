@@ -172,8 +172,6 @@ export default function Home() {
                 const lineHeight = fontSize * 1.2; // 1.2 is a typical line-height ratio
                 
                 // Create bounding boxes for each word
-                const words = textContent.split(' ');
-                let wordIndex = 0;
                 
                 lines.forEach((line, lineIndex) => {
                     const lineY = rect.top + rect.height / 2 + (lineIndex - (lines.length - 1) / 2) * lineHeight;
@@ -236,7 +234,6 @@ export default function Home() {
                         }
                         
                         currentX += wordWidth + ctx.measureText(' ').width; // Move to next word
-                        wordIndex++;
                     });
                 });
             }
@@ -636,8 +633,8 @@ export default function Home() {
                     
                     // Create a scaled down version of the attractor data
                     const imageData = ctx.createImageData(128, 128);
-                    for (let y = 0; y < 128; y++) {
-                      for (let x = 0; x < 128; x++) {
+                    for (let y = 0; y < 128; y += 1) {
+                      for (let x = 0; x < 128; x += 1) {
                         const srcX = Math.floor((x / 128) * viewportSize.width);
                         const srcY = Math.floor((y / 128) * viewportSize.height);
                         const srcIndex = srcY * viewportSize.width + srcX;
