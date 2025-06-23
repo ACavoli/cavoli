@@ -103,7 +103,7 @@ export function draw3DCube({ ctx, viewportSize, parallaxStrength, scrollY }: Cub
     const face = faces[index];
     const color = faceColors[index];
     
-    ctx.fillStyle = `rgb(${Math.floor(color * 255)}, ${Math.floor(color * 255)}, ${Math.floor(color * 255)})`;
+    ctx.fillStyle = `rgb(${Math.floor(color * 250)}, ${Math.floor(color * 250)}, ${Math.floor(color * 250)})`;
     
     ctx.beginPath();
     const firstVertex = transformedVertices[face[0]];

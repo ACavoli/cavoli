@@ -19,7 +19,14 @@ export function calculateTextBoundingBoxes({ ctx, viewportSize, debugMode }: Bou
   const textElements = Array.from(document.querySelectorAll('.attractive-text'));
   const validElements = textElements.filter(el => {
     const rect = el.getBoundingClientRect();
-    return rect.width > 0 && rect.height > 0 && rect.top < viewportSize.height && rect.bottom > 0;
+    const styles = window.getComputedStyle(el);
+    const opacity = parseFloat(styles.opacity);
+    
+    return rect.width > 0 && 
+           rect.height > 0 && 
+           rect.top < viewportSize.height && 
+           rect.bottom > 0 &&
+           opacity > 0.01; // Only process if opacity is greater than 1%
   });
   
   if (debugMode) {
@@ -28,9 +35,11 @@ export function calculateTextBoundingBoxes({ ctx, viewportSize, debugMode }: Bou
   
   validElements.forEach(el => {
     const rect = el.getBoundingClientRect();
-    if (rect.top < viewportSize.height && rect.bottom > 0) {
+    const styles = window.getComputedStyle(el);
+    const opacity = parseFloat(styles.opacity);
+    
+    if (rect.top < viewportSize.height && rect.bottom > 0 && opacity > 0.01) {
       // Get the computed styles to match the text rendering
-      const styles = window.getComputedStyle(el);
       ctx.font = `${styles.fontWeight} ${styles.fontSize} ${styles.fontFamily}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
