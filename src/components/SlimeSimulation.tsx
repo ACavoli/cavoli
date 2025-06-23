@@ -51,39 +51,14 @@ export default function SlimeSimulation({
 
       if (attractorData && attractorBuffer) {
         device.queue.writeBuffer(attractorBuffer, 0, attractorData)
-        console.log(`[SlimeSimulation] Updated attractor buffer:`, {
-          size: attractorData.length,
-          sampleValues: attractorData.slice(0, 10),
-          maxValue: Math.max(...Array.from(attractorData.slice(0, 1000))), // Sample first 1000 values to avoid stack overflow
-          nonZeroCount: attractorData.filter(v => v > 0).length,
-          nonZeroSample: attractorData.filter(v => v > 0).slice(0, 5),
-          timestamp: Date.now()
-        })
       }
 
       if (textCenters && textBoxesBuffer) {
         device.queue.writeBuffer(textBoxesBuffer, 0, textCenters)
-        console.log(`[SlimeSimulation] Updated text boxes buffer:`, {
-          size: textCenters.length,
-          numBoxes: textCenters.length / 4,
-          boxes: Array.from({ length: Math.min(textCenters.length / 4, 10) }, (_, i) => ({
-            x1: textCenters[i * 4],
-            y1: textCenters[i * 4 + 1],
-            x2: textCenters[i * 4 + 2],
-            y2: textCenters[i * 4 + 3],
-            isDummy: textCenters[i * 4] === -999.0
-          })),
-          timestamp: Date.now()
-        })
       } else if (textBoxesBuffer) {
         // Write dummy data when no text centers
         const dummyData = new Float32Array(40).fill(-999.0);
         device.queue.writeBuffer(textBoxesBuffer, 0, dummyData)
-        console.log(`[SlimeSimulation] No text boxes - wrote dummy data to buffer`, {
-          textCentersType: textCenters ? 'array' : 'null',
-          textCentersLength: textCenters?.length || 0,
-          timestamp: Date.now()
-        });
       }
     }
   }, [decayRate, diffusionRate, moveSpeed, turnSpeed, sensorDistance, sensorSize, sensorAngle, attractionStrength, attractorData, textCenters])
@@ -91,14 +66,6 @@ export default function SlimeSimulation({
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-
-    console.log('[SlimeSimulation] Initializing WebGPU with data:', {
-      width,
-      height,
-      numSlimes,
-      attractorDataSize: attractorData?.length || 0,
-      textCentersSize: textCenters?.length || 0
-    })
 
     let animationFrameId: number;
 
@@ -173,13 +140,6 @@ export default function SlimeSimulation({
           size: 10 * 4 * 4, // 10 boxes * 4 floats per box * 4 bytes per float
           usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         })
-
-        console.log('[SlimeSimulation] Buffer creation:', {
-          textCentersExists: !!textCenters,
-          textCentersLength: textCenters?.length || 0,
-          bufferSize: textCenters && textCenters.length > 0 ? textCenters.byteLength : 0,
-          textCentersSample: textCenters ? Array.from(textCenters.slice(0, 8)) : null
-        });
 
         // Initialize buffers with data if available
         if (attractorData) {
@@ -348,6 +308,55 @@ export default function SlimeSimulation({
               return total_sense / num_pixels;
             }
 
+            fn sampleAttraction(pos: vec2<f32>) -> f32 {
+              let sensor_size_u = u32(uniforms.sensorSize);
+
+              // Fast path for single-pixel sensor
+              if (sensor_size_u <= 1u) {
+                let texCoord = vec2<i32>(
+                  i32((pos.x + 1.0) * 0.5 * f32(WIDTH)),
+                  i32((pos.y + 1.0) * 0.5 * f32(HEIGHT))
+                );
+                if (texCoord.x < 0 || texCoord.x >= i32(WIDTH) || texCoord.y < 0 || texCoord.y >= i32(HEIGHT)) {
+                  return 0.0;
+                }
+                let attractor_index = texCoord.y * i32(WIDTH) + texCoord.x;
+                if (attractor_index >= 0 && attractor_index < i32(WIDTH * HEIGHT)) {
+                  return attractorData[attractor_index];
+                }
+                return 0.0;
+              }
+
+              // Averaging for larger sensors
+              var total_sense: f32 = 0.0;
+              let half_size: i32 = i32(sensor_size_u / 2u);
+              
+              let centerTexCoord = vec2<f32>(
+                (pos.x + 1.0) * 0.5 * f32(WIDTH),
+                (pos.y + 1.0) * 0.5 * f32(HEIGHT)
+              );
+
+              for (var dx: i32 = -half_size; dx <= half_size; dx = dx + 1) {
+                for (var dy: i32 = -half_size; dy <= half_size; dy = dy + 1) {
+                  let sampleCoord = vec2<i32>(
+                    i32(round(centerTexCoord.x)) + dx,
+                    i32(round(centerTexCoord.y)) + dy
+                  );
+
+                  if (sampleCoord.x >= 0 && sampleCoord.x < i32(WIDTH) && sampleCoord.y >= 0 && sampleCoord.y < i32(HEIGHT)) {
+                    let attractor_index = sampleCoord.y * i32(WIDTH) + sampleCoord.x;
+                    if (attractor_index >= 0 && attractor_index < i32(WIDTH * HEIGHT)) {
+                      total_sense = total_sense + attractorData[attractor_index];
+                    }
+                  }
+                }
+              }
+              
+              let num_pixels = f32(sensor_size_u * sensor_size_u);
+              if (num_pixels == 0.0) { return 0.0; }
+              return total_sense / num_pixels;
+            }
+
             fn isPointInBox(point: vec2<f32>, box: vec4<f32>) -> bool {
               return point.x >= box.x && point.x <= box.z && point.y >= box.y && point.y <= box.w;
             }
@@ -413,6 +422,16 @@ export default function SlimeSimulation({
                 }
               }
 
+               // Sample attraction at sensor positions
+              let frontAttraction = sampleAttraction(frontPos);
+              let leftAttraction = sampleAttraction(leftPos);
+              let rightAttraction = sampleAttraction(rightPos);
+
+              // Combine trail and attraction sensing
+              let frontTotal = frontSense + frontAttraction * uniforms.attractionStrength;
+              let leftTotal = leftSense + leftAttraction * uniforms.attractionStrength;
+              let rightTotal = rightSense + rightAttraction * uniforms.attractionStrength;
+
               // Check if slime is inside any text bounding box
               var inside_box = false;
               var box_center = vec2<f32>(0.0, 0.0);
@@ -469,7 +488,7 @@ export default function SlimeSimulation({
                   if (text_within_radius) {
                     // Text is within radius - use local attraction to follow text contours
                     var best_angle = slimes[threadId].angle;
-                    var max_attraction = attraction;
+                    var max_attraction = frontAttraction;
                     
                     for (var i: u32 = 0u; i < 8u; i = i + 1u) {
                       let test_angle = f32(i) * 0.785398; // 45 degrees in radians
@@ -568,11 +587,11 @@ export default function SlimeSimulation({
                 slimes[threadId].angle = slimes[threadId].angle + uniforms.turnSpeed;
               } else if (rightPos.y >= 1.0 && rightPos.y > leftPos.y) {
                 slimes[threadId].angle = slimes[threadId].angle - uniforms.turnSpeed;
-              } else if (frontSense > leftSense && frontSense > rightSense) {
+              } else if (frontTotal > leftTotal && frontTotal > rightTotal) {
                 // Continue straight - do nothing
-              } else if (leftSense > rightSense) {
+              } else if (leftTotal > rightTotal) {
                 slimes[threadId].angle = slimes[threadId].angle - uniforms.turnSpeed;
-              } else if (rightSense > leftSense) {
+              } else if (rightTotal > leftTotal) {
                 slimes[threadId].angle = slimes[threadId].angle + uniforms.turnSpeed;
               }
               
@@ -704,19 +723,6 @@ export default function SlimeSimulation({
             topology: 'triangle-list',
           },
         })
-
-        // Create bind group layout
-        // const bindGroupLayout = device.createBindGroupLayout({
-        //   entries: [
-        //     { binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
-        //     { binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
-        //     { binding: 2, visibility: GPUShaderStage.COMPUTE, texture: { sampleType: 'unfilterable-float' } },
-        //     { binding: 3, visibility: GPUShaderStage.COMPUTE, storageTexture: { access: 'write-only', format: 'rgba8unorm' } },
-        //     { binding: 4, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'uniform' } },
-        //     { binding: 5, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'read-only-storage' } },
-        //     { binding: 6, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'read-only-storage' } },
-        //   ],
-        // })
 
         // Create slime bind groups
         const slimeBindGroups = [
