@@ -34,7 +34,7 @@ export function generateAttractorData({ viewportSize, debugMode, parallaxStrengt
   // Draw 3D cube and get its bounding box (only if not hidden)
   let cubeBoundingBox: [number, number, number, number] | null = null;
   if (hideCube === 0) {
-    cubeBoundingBox = draw3DCube({ ctx, viewportSize, debugMode, parallaxStrength, scrollY });
+    cubeBoundingBox = draw3DCube({ ctx, viewportSize, parallaxStrength, scrollY });
     
     if (debugMode) {
       console.log('[AttractorDataGenerator] Cube bounding box:', {

@@ -3,7 +3,6 @@
 interface CubeRendererProps {
   ctx: CanvasRenderingContext2D;
   viewportSize: { width: number; height: number };
-  debugMode: boolean;
   parallaxStrength: number;
   scrollY: number;
 }
@@ -15,7 +14,7 @@ export interface CubeBoundingBox {
   y2: number;
 }
 
-export function draw3DCube({ ctx, viewportSize, debugMode, parallaxStrength, scrollY }: CubeRendererProps): [number, number, number, number] {
+export function draw3DCube({ ctx, viewportSize, parallaxStrength, scrollY }: CubeRendererProps): [number, number, number, number] {
   const centerX = viewportSize.width * 0.5;
   const centerY = viewportSize.height * 0.5;
   

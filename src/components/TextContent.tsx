@@ -24,6 +24,11 @@ export default function TextContent({ webGPUAvailable }: TextContentProps) {
 
   return (
     <div className="relative z-10 text-white">
+      {!webGPUAvailable && (
+        <div className="absolute top-0 left-0 w-full h-full bg-black/50 z-50">
+          <h1 className="text-white text-4xl font-bold">WebGPU is not available - Please turn on WebGPU in your browser settings</h1>
+        </div>
+      )}
       <div className="container mx-auto p-4">
         
         {/* Welcome Section */}
