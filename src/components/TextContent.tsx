@@ -38,15 +38,25 @@ export default function TextContent({ webGPUAvailable }: TextContentProps) {
     const handleScroll = () => {
       const scrollY = window.scrollY;
       const windowHeight = window.innerHeight;
-      const documentHeight = document.documentElement.scrollHeight;
+            
+      // Calculate total page height
+      const docHeight = Math.max(
+        document.body.scrollHeight,
+        document.body.offsetHeight,
+        document.documentElement.clientHeight,
+        document.documentElement.scrollHeight,
+        document.documentElement.offsetHeight
+      );
+      const totalHeight = docHeight - windowHeight;
       
-      // Calculate opacity for welcome section (fade out as we scroll)
-      const welcomeOpacity = Math.max(0, 1 - (scrollY / windowHeight));
+      // Welcome/Explore opacity - fade out after 30vh
+      const welcomeVh = windowHeight * 0.15;
+      const welcomeOpacity = Math.max(0, 1 - (scrollY / welcomeVh));
       setWelcomeOpacity(welcomeOpacity);
       
-      // Calculate opacity for final section (fade in as we approach the end)
-      const finalSectionStart = documentHeight - windowHeight * 2;
-      const finalOpacity = Math.max(0, Math.min(1, (scrollY - finalSectionStart) / windowHeight));
+      // Final section opacity - fade in during last 30vh
+      const finalVh = totalHeight - (windowHeight * 0.15);
+      const finalOpacity = Math.max(0, Math.min(1, (scrollY - finalVh) / (windowHeight * 0.15)));
       setFinalOpacity(finalOpacity);
     };
 
