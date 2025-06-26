@@ -8,10 +8,8 @@ interface TextContentProps {
 }
 
 export default function TextContent({ webGPUAvailable }: TextContentProps) {
-  const [arrowOpacity, setArrowOpacity] = useState(1);
   const [welcomeOpacity, setWelcomeOpacity] = useState(1);
   const [finalOpacity, setFinalOpacity] = useState(0);
-  const [totalPageHeight, setTotalPageHeight] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -27,11 +25,6 @@ export default function TextContent({ webGPUAvailable }: TextContentProps) {
         document.documentElement.offsetHeight
       );
       const totalHeight = docHeight - windowHeight;
-      setTotalPageHeight(totalHeight);
-      
-      // Arrow opacity - fade out in first half screen
-      const arrowOpacity = Math.max(0, 1 - (scrollY / (windowHeight * 0.5)));
-      setArrowOpacity(arrowOpacity);
       
       // Welcome/Explore opacity - fade out after 30vh
       const welcomeVh = windowHeight * 0.15;
@@ -95,9 +88,6 @@ export default function TextContent({ webGPUAvailable }: TextContentProps) {
 
         {/* Final Section */}
         <div className="h-screen relative">
-          <div className="absolute top-1/3 left-1/3 transform -translate-x-1/4 -translate-y-1/2 transition-opacity duration-300">
-            <h2 className="attractive-text text-6xl md:text-9xl font-bold" style={{ opacity: finalOpacity }}>CONNECT</h2>
-          </div>
           <div className="absolute bottom-1/3 right-1/3 transform translate-x-1/4 translate-y-1/2 transition-opacity duration-300">
             <h3 className="attractive-text text-4xl md:text-6xl font-bold" style={{ opacity: finalOpacity }}>SHARE</h3>
           </div>
